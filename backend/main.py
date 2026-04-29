@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from api.routes.contractor import router as contractor_router
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -22,6 +23,7 @@ async def health_check():
     return {"status": "healthy", "service": "InstantService Backend"}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 from backend.api.routes import analyze_request, tier, dispatch, booking
 =======
 from backend.api.routes import analyze_request, tier, dispatch, booking, voice
@@ -33,4 +35,14 @@ app.include_router(tier.router, prefix="/api", tags=["Tier Selection"])
 app.include_router(dispatch.router, prefix="/api", tags=["Dispatching"])
 app.include_router(booking.router, prefix="/api", tags=["Booking"])
 app.include_router(voice.router, prefix="/api", tags=["Voice"])
+=======
+# from api.routes import analyze_request, tier, dispatch, booking
+
+# Include routers
+# app.include_router(analyze_request.router, prefix="/api", tags=["Analysis"])
+# app.include_router(tier.router, prefix="/api", tags=["Tier Selection"])
+# app.include_router(dispatch.router, prefix="/api", tags=["Dispatching"])
+# app.include_router(booking.router, prefix="/api", tags=["Booking"])
+app.include_router(contractor_router)
+>>>>>>> 97606a7 (Add Snowflake contractor dashboard backend)
 
