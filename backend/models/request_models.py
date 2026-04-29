@@ -14,9 +14,17 @@ class SelectTierPayload(BaseModel):
 
 class DispatchPayload(BaseModel):
     request_id: str
-    # We might need location here if it wasn't saved, but assuming it's loaded from state
 
 class CompleteBookingPayload(BaseModel):
     booking_id: str
     rating: int
     review: Optional[str] = None
+
+class VoiceConfirmationPayload(BaseModel):
+    booking_id: str
+    text: Optional[str] = None
+    tier: Optional[Tier] = None
+    service_category: Optional[str] = None
+    contractor_name: Optional[str] = None
+    arrival_window: Optional[str] = None
+    premium_coverage: Optional[bool] = False
