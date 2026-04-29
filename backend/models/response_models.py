@@ -28,3 +28,9 @@ class CompleteBookingResponse(BaseModel):
     booking_id: str
     status: str = "Completed"
     message: str = "Booking finalized and reviews updated."
+
+class VoiceConfirmationResponse(BaseModel):
+    booking_id: str
+    audio_base64: Optional[str] = None
+    voice_status: str
+    fallback_text: str

@@ -6,6 +6,8 @@ from ...models.domain_models import Tier, Urgency
 
 router = APIRouter()
 
+from ...services.gemini_service import analyze_service_request
+
 @router.post("/analyze-request", response_model=AnalyzeRequestResponse)
 async def analyze_request(payload: AnalyzeRequestPayload):
     """
@@ -16,19 +18,17 @@ async def analyze_request(payload: AnalyzeRequestPayload):
         # 1. Generate a unique request ID
         request_id = f"req_{uuid.uuid4().hex[:8]}"
         
-        # 2. TODO (Dev 3): Call the Gemini Service here passing payload.message
-        # e.g., result = await gemini_service.analyze(payload.message)
+        # 2. Call Dev 3's Gemini Service
+        analysis = analyze_service_request(
+            message=payload.message,
+            location=payload.location,
+            property_type=payload.property_type
+        )
         
-        # 3. For now, return a mock response matching the required schema
+        # 3. Return response using the Pydantic model
         return AnalyzeRequestResponse(
             request_id=request_id,
-            service_category="Plumbing", # Mocked
-            urgency=Urgency.HIGH, # Mocked
-            estimated_complexity="Medium", # Mocked
-            recommended_tier=Tier.PLUS, # Mocked
-            problem_summary="Kitchen sink leak under cabinet", # Mocked
-            client_facing_explanation="This should be handled soon to reduce water damage risk.", # Mocked
-            contractor_summary="Client reports a kitchen sink leak under the cabinet with spreading water." # Mocked
+            **analysis
         )
         
     except Exception as e:
