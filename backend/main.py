@@ -21,4 +21,11 @@ app.add_middleware(
 async def health_check():
     return {"status": "healthy", "service": "InstantService Backend"}
 
-# We will include routers here as we build them
+from api.routes import analyze_request, tier, dispatch, booking
+
+# Include routers
+app.include_router(analyze_request.router, prefix="/api", tags=["Analysis"])
+app.include_router(tier.router, prefix="/api", tags=["Tier Selection"])
+app.include_router(dispatch.router, prefix="/api", tags=["Dispatching"])
+app.include_router(booking.router, prefix="/api", tags=["Booking"])
+
