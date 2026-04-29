@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+# Snowflake connector will be added when Dev 4 is ready, but we'll include the standard one
+snowflake-connector-python
