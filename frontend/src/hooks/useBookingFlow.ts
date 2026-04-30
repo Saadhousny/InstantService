@@ -253,7 +253,7 @@ export function useBookingFlow(): BookingFlowApi {
           : "Could not analyze the request. Please try again.";
       dispatch({ type: "ANALYSIS_FAIL", error: message });
     }
-  }, []);
+  }, [user?.user_id]);
 
   const goToTierSelection = useCallback(() => {
     dispatch({ type: "GO_TO_TIER_SELECTION" });
@@ -326,7 +326,7 @@ export function useBookingFlow(): BookingFlowApi {
     try {
       await apiCancelBooking({ booking_id: current.bookingId });
       dispatch({ type: "CANCEL_BOOKING" });
-    } catch (err) {
+    } catch (_err) {
       // Even if API fails, we reset locally for UX
       dispatch({ type: "CANCEL_BOOKING" });
     }
