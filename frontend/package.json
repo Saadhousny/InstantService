@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "cookies-next": "^6.1.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.14.0",
     "next": "14.2.35",

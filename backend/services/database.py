@@ -1,7 +1,7 @@
 import snowflake.connector
 from ..config.settings import settings
 from typing import List, Optional
-from ..models.domain_models import Contractor, Booking
+from ..models.domain_models import Contractor, Booking, Tier, BookingStatus
 
 from ..services.snowflake_service import run_query, run_command
 
@@ -11,7 +11,6 @@ class DatabaseService:
         if settings.mock_mode:
             return
             
-        # Fixed query: Removed PROPERTY_TYPE as it doesn't exist in the SERVICE_REQUESTS table schema
         query = """
         INSERT INTO SERVICE_REQUESTS (REQUEST_ID, CLIENT_ID, SERVICE_CATEGORY, PROBLEM_SUMMARY, URGENCY, RECOMMENDED_TIER)
         VALUES (%s, %s, %s, %s, %s, %s)
@@ -37,7 +36,6 @@ class DatabaseService:
         
         contractors = []
         for row in rows:
-            # Map Snowflake columns (uppercase dict keys) to Pydantic Contractor model
             contractors.append(Contractor(
                 contractor_id=row["CONTRACTOR_ID"],
                 name=row["FULL_NAME"],
@@ -113,3 +111,17 @@ class DatabaseService:
             "urgency": row["URGENCY"],
             "selected_tier": row["SELECTED_TIER"]
         }
+
+    @staticmethod
+    def update_booking_status(booking_id: str, new_status: BookingStatus) -> bool:
+        if settings.mock_mode:
+            return True
+            
+        query = "UPDATE BOOKINGS SET STATUS = %s WHERE BOOKING_ID = %s"
+        params = [new_status, booking_id]
+        
+        try:
+            run_command(query, params)
+            return True
+        except Exception:
+            return False

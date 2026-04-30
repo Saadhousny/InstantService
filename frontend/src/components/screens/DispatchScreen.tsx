@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Star,
   TrendingUp,
+  CreditCard,
 } from "lucide-react";
 import {
   DispatchProgress,
@@ -21,21 +22,21 @@ interface DispatchScreenProps {
   flow: BookingFlowApi;
 }
 
-const TIER_PILL: Record<
+const TIER_CONFIG: Record<
   Tier,
-  { className: string; label: string }
+  { className: string; label: string; price: string }
 > = {
-  Basic: { className: "bg-slate-100 text-tierBasic", label: "Basic" },
-  Plus: { className: "bg-blue-50 text-tierPlus", label: "Plus" },
-  Premium: { className: "bg-blue-950/5 text-tierPremium", label: "Premium" },
+  Basic: { className: "bg-slate-100 text-slate-700", label: "Basic", price: "$65.00" },
+  Plus: { className: "bg-blue-50 text-primary", label: "Plus", price: "$95.00" },
+  Premium: { className: "bg-blue-950 text-white", label: "Premium", price: "$145.00" },
 };
 
 export function DispatchScreen({ flow }: DispatchScreenProps) {
   const { state, generateVoice } = flow;
   const { step, selectedTier, dispatchResult, error } = state;
 
-  const tierLabel = selectedTier ?? dispatchResult?.contractor.tier ?? "Plus";
-  const tierPill = TIER_PILL[tierLabel];
+  const tierLabel = selectedTier ?? (dispatchResult?.contractor.tier as Tier) ?? "Plus";
+  const config = TIER_CONFIG[tierLabel];
 
   const isAccepted = step === "accepted" || step === "voice_generating";
   const isVoiceGenerating = step === "voice_generating";
@@ -129,11 +130,11 @@ export function DispatchScreen({ flow }: DispatchScreenProps) {
             </span>
           )}
           <h1 className="text-2xl font-bold text-ink text-balance">
-            {isAccepted ? "Contractor confirmed" : "Dispatch in progress"}
+            {isAccepted ? "Booking Summary" : "Dispatch in progress"}
           </h1>
           <p className="text-base leading-6 text-subtext">
             {isAccepted
-              ? "Review the details below, then confirm to lock the booking."
+              ? "Review your service details and pricing before confirming."
               : "Sit tight — we're matching this with a verified pro."}
           </p>
         </header>
@@ -142,9 +143,9 @@ export function DispatchScreen({ flow }: DispatchScreenProps) {
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-semibold text-ink">Dispatch progress</p>
             <span
-              className={`inline-flex items-center rounded-[10px] px-2.5 py-1 text-xs font-semibold uppercase tracking-wide ${tierPill.className}`}
+              className={`inline-flex items-center rounded-[10px] px-2.5 py-1 text-xs font-semibold uppercase tracking-wide ${config.className}`}
             >
-              {tierPill.label}
+              {config.label}
             </span>
           </div>
           <DispatchProgress steps={steps} />
@@ -158,6 +159,8 @@ export function DispatchScreen({ flow }: DispatchScreenProps) {
             distanceKm={dispatchResult.contractor.distance_km}
             ratingDisplay={ratingDisplay}
             acceptanceRatePct={acceptanceRatePct}
+            tierLabel={config.label}
+            price={config.price}
           />
         )}
 
@@ -198,6 +201,14 @@ export function DispatchScreen({ flow }: DispatchScreenProps) {
           ) : (
             <DispatchingFooter />
           )}
+          
+          <button
+            type="button"
+            onClick={() => void flow.cancel()}
+            className="mt-4 w-full py-2 text-sm font-medium text-muted hover:text-danger transition-colors duration-150"
+          >
+            Cancel request
+          </button>
         </div>
       </div>
     </main>
@@ -211,6 +222,8 @@ interface ContractorCardProps {
   distanceKm: number | null;
   ratingDisplay: string | null;
   acceptanceRatePct: number | null;
+  tierLabel: string;
+  price: string;
 }
 
 function ContractorCard({
@@ -220,13 +233,24 @@ function ContractorCard({
   distanceKm,
   ratingDisplay,
   acceptanceRatePct,
+  tierLabel,
+  price,
 }: ContractorCardProps) {
   return (
     <FadeInCard>
       <article
-        aria-label={`Assigned contractor ${name}`}
+        aria-label={`Booking details for ${name}`}
         className="flex flex-col gap-0 rounded-lg border border-border bg-surface shadow-sm overflow-hidden"
       >
+        {/* Pricing row */}
+        <div className="flex items-center justify-between border-b border-border bg-slate-50 px-5 py-3">
+          <div className="flex items-center gap-2">
+            <CreditCard className="size-4 text-muted" strokeWidth={1.75} />
+            <span className="text-sm font-medium text-ink">{tierLabel} Service</span>
+          </div>
+          <span className="text-lg font-bold text-ink">{price}</span>
+        </div>
+
         {/* Identity row */}
         <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4">
           <div className="flex flex-col gap-0.5">

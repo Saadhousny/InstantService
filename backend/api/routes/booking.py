@@ -1,25 +1,31 @@
 from fastapi import APIRouter, HTTPException
-from ...models.request_models import CompleteBookingPayload
-from ...models.response_models import CompleteBookingResponse
+from pydantic import BaseModel
+from typing import Optional
+from ...models.domain_models import BookingStatus
+from ...services.database import DatabaseService
 
 router = APIRouter()
 
-@router.post("/complete-booking", response_model=CompleteBookingResponse)
-async def complete_booking(payload: CompleteBookingPayload):
+class CancelBookingPayload(BaseModel):
+    booking_id: str
+    reason: Optional[str] = "User requested cancellation"
+
+@router.post("/cancel")
+async def cancel_booking(payload: CancelBookingPayload):
     """
-    Marks a booking as completed and processes the user rating/review.
+    Cancels an active booking in Snowflake.
     """
     try:
-        # TODO: Load booking from DB
-        # TODO: Update booking status to COMPLETED
-        # TODO: Save rating and review text
-        # TODO: Update contractor review count and acceptance rate
-        # TODO: Recalculate contractor tier based on new scores
-        
-        return CompleteBookingResponse(
+        success = DatabaseService.update_booking_status(
             booking_id=payload.booking_id,
-            status="Completed",
-            message="Booking finalized and reviews updated."
+            new_status=BookingStatus.CANCELLED
         )
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="Booking not found or could not be cancelled.")
+            
+        return {"status": "success", "message": f"Booking {payload.booking_id} has been cancelled."}
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to complete booking: {str(e)}")
+        print(f"CANCELLATION ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to cancel booking: {str(e)}")

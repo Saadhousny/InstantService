@@ -5,10 +5,9 @@ from .tier_service import TierService
 class MatchingService:
     
     @staticmethod
-    def calculate_score(contractor: Contractor, requested_tier: Tier, urgency: Urgency) -> float:
+    def calculate_score(contractor: Contractor, requested_tier: Optional[Tier], urgency: Urgency) -> float:
         """
-        Calculates the ranking score for a contractor based on roles.md formula:
-        score = tier_score + acceptance_rate_score + review_score + distance_score + urgency_bonus
+        Calculates the ranking score for a contractor.
         """
         score = 0.0
         
@@ -24,10 +23,9 @@ class MatchingService:
         score += (contractor.acceptance_rate * 20)
         
         # 3. Review Score
-        review_ratio = min(contractor.five_star_review_count / 100.0, 1.0)
-        score += (review_ratio * 20)
+        score += (min(contractor.five_star_review_count / 100.0, 1.0) * 20)
         
-        # 4. Distance Score (assume closer gets up to 20 points, maxing out around 20km)
+        # 4. Distance Score
         distance_points = max(0, 20 - contractor.distance_km)
         score += distance_points
         
@@ -40,14 +38,19 @@ class MatchingService:
     @staticmethod
     def rank_contractors(
         contractors: List[Contractor], 
-        requested_tier: Tier, 
+        requested_tier: Optional[Tier], 
         urgency: Urgency, 
         service_category: str
     ) -> List[Contractor]:
         """
-        Filters and ranks a list of contractors.
+        Filters and ranks a list of contractors. 
+        If requested_tier is None, it ignores tier restrictions (Fallback Mode).
         """
-        eligible_tiers = TierService.get_eligible_contractor_tiers(requested_tier)
+        if requested_tier:
+            eligible_tiers = TierService.get_eligible_contractor_tiers(requested_tier)
+        else:
+            # Fallback mode: Every tier is eligible
+            eligible_tiers = [Tier.BASIC, Tier.PLUS, Tier.PREMIUM]
         
         # Filter
         eligible_contractors = [
@@ -68,7 +71,7 @@ class MatchingService:
     @staticmethod
     def find_best_match(
         contractors: List[Contractor], 
-        requested_tier: Tier, 
+        requested_tier: Optional[Tier], 
         urgency: Urgency, 
         service_category: str
     ) -> Optional[Contractor]:

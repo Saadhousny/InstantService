@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+requests
+python-dotenv
+snowflake-connector-python
+passlib[bcrypt]
+PyJWT
+python-multipart
+elevenlabs
+rich

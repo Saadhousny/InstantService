@@ -11,7 +11,7 @@ async def select_tier(payload: SelectTierPayload):
     Saves the user's selected service tier for their request to Snowflake.
     """
     try:
-        # Save selected tier to Snowflake
+        # Save selected tier to Snowflake (snowflake_service will handle Enum conversion)
         DatabaseService.save_tier_selection(
             request_id=payload.request_id,
             tier_name=payload.selected_tier
