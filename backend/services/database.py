@@ -7,11 +7,25 @@ from ..services.snowflake_service import run_query, run_command
 
 class DatabaseService:
     @staticmethod
-    def get_connection():
+    def save_service_request(request_id: str, client_id: str, analysis: dict):
+        if settings.mock_mode:
+            return
+            
+        # Fixed query: Removed PROPERTY_TYPE as it doesn't exist in the SERVICE_REQUESTS table schema
+        query = """
+        INSERT INTO SERVICE_REQUESTS (REQUEST_ID, CLIENT_ID, SERVICE_CATEGORY, PROBLEM_SUMMARY, URGENCY, RECOMMENDED_TIER)
+        VALUES (%s, %s, %s, %s, %s, %s)
         """
-        Dev 4 built get_connection in snowflake_service.py. We don't need this stub anymore.
-        """
-        pass
+        params = [
+            request_id,
+            client_id,
+            analysis["service_category"],
+            analysis["problem_summary"],
+            analysis["urgency"],
+            analysis["recommended_tier"]
+        ]
+        
+        run_command(query, params)
 
     @staticmethod
     def get_all_contractors() -> List[Contractor]:
@@ -23,15 +37,17 @@ class DatabaseService:
         
         contractors = []
         for row in rows:
-            # Map Snowflake columns (uppercase dict keys) to Pydantic Contractor
+            # Map Snowflake columns (uppercase dict keys) to Pydantic Contractor model
             contractors.append(Contractor(
-                id=row["CONTRACTOR_ID"],
+                contractor_id=row["CONTRACTOR_ID"],
                 name=row["FULL_NAME"],
+                service_category=row["SERVICE_CATEGORY"],
+                location=row["LOCATION"],
                 tier=row["TIER"],
                 acceptance_rate=(row["ACCEPTED_REQUESTS"] / max(row["TOTAL_REQUESTS_PINGED"], 1)),
-                five_star_reviews=row["FIVE_STAR_REVIEW_COUNT"],
-                total_reviews=row["FIVE_STAR_REVIEW_COUNT"], # Simplified mapping
-                distance_km=0.0 # Calculate distance later if needed
+                five_star_review_count=row["FIVE_STAR_REVIEW_COUNT"],
+                is_active=(row["ACTIVE_STATUS"] == "Active"),
+                distance_km=0.0
             ))
         return contractors
 
@@ -46,28 +62,22 @@ class DatabaseService:
         ON target.BOOKING_ID = source.id
         WHEN MATCHED THEN
             UPDATE SET 
-                STATUS = %s,
-                COMPLETED_AT = %s
+                STATUS = %s
         WHEN NOT MATCHED THEN
-            INSERT (BOOKING_ID, REQUEST_ID, CLIENT_ID, CONTRACTOR_ID, SERVICE_CATEGORY, TIER_SELECTED, PROBLEM_SUMMARY, URGENCY, STATUS, SCHEDULED_WINDOW, PREMIUM_COVERAGE)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT (BOOKING_ID, REQUEST_ID, CLIENT_ID, CONTRACTOR_ID, STATUS, TIER_SELECTED, SCHEDULED_WINDOW, PREMIUM_COVERAGE)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """
         
-        # Determine values for the query based on whether it's an update or insert
         params = [
             booking.booking_id,
             booking.status,
-            booking.completed_at if hasattr(booking, 'completed_at') else None,
             booking.booking_id,
             booking.request_id,
             booking.client_id,
             booking.contractor_id,
-            booking.service_category,
-            booking.tier_selected,
-            booking.problem_summary,
-            booking.urgency,
             booking.status,
-            booking.scheduled_window,
+            booking.selected_tier,
+            booking.estimated_arrival_window,
             booking.premium_coverage
         ]
         
@@ -82,3 +92,24 @@ class DatabaseService:
         params = [tier_name, request_id]
         
         run_command(query, params)
+
+    @staticmethod
+    def get_service_request(request_id: str) -> Optional[dict]:
+        if settings.mock_mode:
+            return None
+            
+        query = "SELECT * FROM SERVICE_REQUESTS WHERE REQUEST_ID = %s"
+        rows = run_query(query, [request_id])
+        
+        if not rows:
+            return None
+            
+        row = rows[0]
+        return {
+            "request_id": row["REQUEST_ID"],
+            "client_id": row["CLIENT_ID"],
+            "service_category": row["SERVICE_CATEGORY"],
+            "problem_summary": row["PROBLEM_SUMMARY"],
+            "urgency": row["URGENCY"],
+            "selected_tier": row["SELECTED_TIER"]
+        }
