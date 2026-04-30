@@ -1,22 +1,19 @@
-import requests
+import sys
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
+# Make sure Python can find the backend package
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+from backend.services.gemini_service import analyze_service_request
 
-payload = {
-    "contents": [{"parts": [{"text": "Say hello in JSON like this: {\"message\": \"hello\"}"}]}]
-}
+print("Testing Gemini AI...\n")
 
-response = requests.post(
-    GEMINI_URL,
-    params={"key": GEMINI_API_KEY},
-    json=payload,
-    timeout=15
+result = analyze_service_request(
+    "My bathroom sink is leaking and water is pooling under the cabinet.",
+    location="Toronto",
+    property_type="Residential"
 )
 
-print("STATUS:", response.status_code)
-print("BODY:", response.json())
+print("=== RESULT ===")
+for key, value in result.items():
+    print(f"{key}: {value}")
