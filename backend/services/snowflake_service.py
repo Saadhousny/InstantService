@@ -4,6 +4,7 @@ import snowflake.connector
 from dotenv import load_dotenv
 
 load_dotenv()
+load_dotenv(".env.snowflake.local", override=True)
 
 REQUIRED_ENV_VARS = [
     "SNOWFLAKE_ACCOUNT",
