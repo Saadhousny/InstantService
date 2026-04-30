@@ -44,7 +44,7 @@ export function AudioPlayer({
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
 
-  const voiceSucceeded = voiceStatus === "success";
+  const voiceSucceeded = voiceStatus === "generated" || voiceStatus === "success";
   const showAudio = voiceSucceeded && Boolean(audioBase64) && !decodeFailed;
 
   useEffect(() => {

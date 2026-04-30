@@ -36,6 +36,7 @@ export function LeafletMap({ coords }: Props) {
 
   return (
     <MapContainer
+      key="instantservice-main-map"
       center={coords}
       zoom={14}
       zoomControl={false}

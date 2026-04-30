@@ -44,6 +44,10 @@ export function HomeScreen({ flow, onTabChange }: HomeScreenProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
   const keepListeningRef = useRef(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animFrameRef = useRef<number>(0);
+  const [audioLevel, setAudioLevel] = useState(0);
 
   const [message, setMessage] = useState(state.request?.message ?? "");
   const [location, setLocation] = useState(state.request?.location ?? "");
@@ -106,8 +110,12 @@ export function HomeScreen({ flow, onTabChange }: HomeScreenProps) {
   function stopMic() {
     keepListeningRef.current = false;
     recognitionRef.current?.stop();
+    cancelAnimationFrame(animFrameRef.current);
+    audioContextRef.current?.close();
+    audioContextRef.current = null;
     setIsListening(false);
     setMicExpanded(false);
+    setAudioLevel(0);
   }
 
   function toggleVoice() {
@@ -131,17 +139,49 @@ export function HomeScreen({ flow, onTabChange }: HomeScreenProps) {
         const text = Array.from(e.results).map((r: any) => r[0].transcript).join("");
         setMessage(text);
       };
+      const safeStart = () => {
+        try {
+          recognition.start();
+        } catch (err) {
+          console.warn("SpeechRecognition already started:", err);
+        }
+      };
+
       recognition.onend = () => {
-        if (keepListeningRef.current) { recognition.start(); return; }
         setIsListening(false);
         setMicExpanded(false);
-        if (message) setSheetOpen(true);
+        if (message.trim().length >= 5) setSheetOpen(true);
       };
-      recognition.onerror = () => { if (keepListeningRef.current) { recognition.start(); } };
+
+      recognition.onerror = () => {
+        if (keepListeningRef.current) {
+          safeStart();
+        }
+      };
+
       keepListeningRef.current = true;
       recognitionRef.current = recognition;
-      recognition.start();
+      safeStart();
       setIsListening(true);
+
+      // Start Web Audio API volume analyzer
+      navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+        const ctx = new AudioContext();
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        audioContextRef.current = ctx;
+        analyserRef.current = analyser;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const tick = () => {
+          analyser.getByteFrequencyData(dataArray);
+          const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+          setAudioLevel(avg / 128); // 0..~1.5
+          animFrameRef.current = requestAnimationFrame(tick);
+        };
+        tick();
+      }).catch(() => {});
     }, 720);
   }
 
@@ -234,7 +274,7 @@ export function HomeScreen({ flow, onTabChange }: HomeScreenProps) {
           pointerEvents: micExpanded ? "auto" : "none",
         }}
       >
-        {/* Logo — centered */}
+        {/* Logo — centered with voice-reactive rings */}
         <div
           className="absolute inset-0 flex items-center justify-center"
           style={{
@@ -242,14 +282,48 @@ export function HomeScreen({ flow, onTabChange }: HomeScreenProps) {
             transition: micExpanded ? "opacity 0.5s ease 0.08s" : "opacity 0.15s ease",
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/SecondaryLogo.png"
-            alt=""
-            aria-hidden
-            className={`w-36 select-none${micExpanded ? " logo-breathing" : ""}`}
-            draggable={false}
-          />
+          <div className="relative flex items-center justify-center">
+            {/* Outer glow ring */}
+            <div
+              className="absolute rounded-full bg-blue-400/20"
+              style={{
+                width: `${180 + audioLevel * 120}px`,
+                height: `${180 + audioLevel * 120}px`,
+                transition: "width 0.08s ease, height 0.08s ease",
+              }}
+            />
+            {/* Mid ring */}
+            <div
+              className="absolute rounded-full bg-blue-500/25"
+              style={{
+                width: `${140 + audioLevel * 80}px`,
+                height: `${140 + audioLevel * 80}px`,
+                transition: "width 0.06s ease, height 0.06s ease",
+              }}
+            />
+            {/* Inner ring */}
+            <div
+              className="absolute rounded-full bg-blue-600/30"
+              style={{
+                width: `${110 + audioLevel * 50}px`,
+                height: `${110 + audioLevel * 50}px`,
+                transition: "width 0.05s ease, height 0.05s ease",
+              }}
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/SecondaryLogo.png"
+              alt=""
+              aria-hidden
+              draggable={false}
+              className="relative z-10 w-36 select-none"
+              style={{
+                transform: `scale(${1 + audioLevel * 0.12})`,
+                transition: "transform 0.08s ease",
+                filter: `drop-shadow(0 0 ${8 + audioLevel * 20}px rgba(29,78,216,${0.4 + audioLevel * 0.4}))`,
+              }}
+            />
+          </div>
         </div>
 
         {/* Cancel button — midway between logo center (50%) and bottom edge (100%) = 75% from top */}
