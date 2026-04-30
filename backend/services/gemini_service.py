@@ -2,13 +2,12 @@ import os
 import json
 import re
 import requests
-from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
+load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
 
 ALLOWED_CATEGORIES = [
     "Plumbing", "Electrical", "HVAC", "Lawn Maintenance",
@@ -61,7 +60,7 @@ def analyze_message(message):
                 "contractor_summary": "Check drain connections and supply lines."
             }
         return FALLBACK_RESPONSE.copy()
-
+    
 def analyze_service_request(message, location="Unknown", property_type="Unknown"):
     try:
         prompt = PROMPT.format(message=message, location=location, property_type=property_type)
@@ -75,9 +74,6 @@ def analyze_service_request(message, location="Unknown", property_type="Unknown"
             timeout=30
         )
         raw = response.json()
-        if "candidates" not in raw:
-            print("Gemini bad response:", raw)
-            return FALLBACK_RESPONSE.copy()
         raw_text = raw["candidates"][0]["content"]["parts"][0]["text"].strip()
         print("RAW GEMINI:", raw_text)
         raw_text = re.sub(r"^```json\s*", "", raw_text)

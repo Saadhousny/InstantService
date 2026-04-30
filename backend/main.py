@@ -1,6 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.api.routes.contractor import router as contractor_router
+from .api.routes.health import router as health_router
+from .api.routes.contractor import router as contractor_router
+from .api.routes.analyze_request import router as analyze_router
+from .api.routes.tier import router as tier_router
+from .api.routes.dispatch import router as dispatch_router
+from .api.routes.booking import router as booking_router
+from .api.routes.voice import router as voice_router
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -22,12 +28,11 @@ app.add_middleware(
 async def health_check():
     return {"status": "healthy", "service": "InstantService Backend"}
 
-from backend.api.routes import analyze_request, tier, dispatch, booking, voice
-
 # Include routers
-app.include_router(analyze_request.router, prefix="/api", tags=["Analysis"])
-app.include_router(tier.router, prefix="/api", tags=["Tier Selection"])
-app.include_router(dispatch.router, prefix="/api", tags=["Dispatching"])
-app.include_router(booking.router, prefix="/api", tags=["Booking"])
-app.include_router(voice.router, prefix="/api", tags=["Voice"])
+app.include_router(analyze_router, prefix="/api", tags=["Analysis"])
+app.include_router(tier_router, prefix="/api", tags=["Tier Selection"])
+app.include_router(dispatch_router, prefix="/api", tags=["Dispatching"])
+app.include_router(booking_router, prefix="/api", tags=["Booking"])
+app.include_router(voice_router, prefix="/api", tags=["Voice"])
 app.include_router(contractor_router)
+app.include_router(health_router)

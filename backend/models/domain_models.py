@@ -38,5 +38,6 @@ class Booking(BaseModel):
     status: BookingStatus
     selected_tier: Tier
     estimated_arrival_window: str
+    premium_coverage: bool = False
     rating: Optional[int] = None
     review: Optional[str] = None

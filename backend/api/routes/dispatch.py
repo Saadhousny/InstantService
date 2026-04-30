@@ -2,7 +2,9 @@ from fastapi import APIRouter, HTTPException
 import uuid
 from ...models.request_models import DispatchPayload
 from ...models.response_models import DispatchResponse
-from ...models.domain_models import Contractor, Tier
+from ...models.domain_models import Contractor, Tier, Booking, BookingStatus, Urgency
+from ...services.database import DatabaseService
+from ...services.matching_service import MatchingService
 
 router = APIRouter()
 
@@ -10,34 +12,61 @@ router = APIRouter()
 async def dispatch_request(payload: DispatchPayload):
     """
     Runs the matching engine to find the best contractor for the request,
-    simulates dispatching to them, and creates a booking.
+    simulates dispatching to them, and creates a booking in Snowflake.
     """
     try:
-        # TODO: Load request data from DB
-        # TODO: Load contractor data from Snowflake/mock data
-        # TODO: Call matching_service to filter and rank contractors
-        # TODO: Simulate pinging top contractor and them accepting
+        # 1. Load request data from Snowflake
+        request_data = DatabaseService.get_service_request(payload.request_id)
+        if not request_data:
+            # Fallback for demo if not in DB
+            category = "Plumbing"
+            urgency = Urgency.HIGH
+            client_id = "cli_demo_1"
+            selected_tier = Tier.PLUS
+        else:
+            category = request_data["service_category"]
+            urgency = Urgency(request_data["urgency"])
+            client_id = request_data["client_id"]
+            selected_tier = Tier(request_data["selected_tier"] or "Basic")
+
+        # 2. Load all active contractors from Snowflake
+        contractors = DatabaseService.get_all_contractors()
         
-        # 1. Generate a booking ID
+        # 3. Find the best match
+        best_contractor = MatchingService.find_best_match(
+            contractors=contractors,
+            requested_tier=selected_tier,
+            urgency=urgency,
+            service_category=category
+        )
+        
+        if not best_contractor:
+            raise HTTPException(status_code=404, detail="No eligible contractors found for this request.")
+
+        # 4. Create and save the booking
         booking_id = f"bkg_{uuid.uuid4().hex[:8]}"
         
-        # 2. Mock a matched contractor for now
-        matched_contractor = Contractor(
-            contractor_id="con_mock_1",
-            name="Alice Plumbing Co.",
-            service_category="Plumbing",
-            location="Toronto",
-            tier=Tier.PLUS,
-            five_star_review_count=120,
-            acceptance_rate=0.95,
-            distance_km=2.5
+        booking = Booking(
+            booking_id=booking_id,
+            request_id=payload.request_id,
+            client_id=client_id,
+            contractor_id=best_contractor.contractor_id,
+            status=BookingStatus.DISPATCHED,
+            selected_tier=selected_tier,
+            estimated_arrival_window="30-45 minutes",
+            premium_coverage=(selected_tier == Tier.PREMIUM)
         )
+        
+        # Save to Snowflake
+        DatabaseService.save_booking(booking)
         
         return DispatchResponse(
             booking_id=booking_id,
-            contractor=matched_contractor,
+            contractor=best_contractor,
             estimated_arrival_window="30-45 minutes",
             status="Dispatched"
         )
+        
     except Exception as e:
+        print(f"DISPATCH ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Dispatch failed: {str(e)}")
