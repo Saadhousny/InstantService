@@ -61,3 +61,7 @@ export function voiceConfirmation(
 export function completeBooking(body: CompleteBookingBody): Promise<void> {
   return post<CompleteBookingBody, void>("/api/complete-booking", body);
 }
+
+export function cancelBooking(body: { booking_id: string }): Promise<void> {
+  return post<{ booking_id: string }, void>("/api/booking/cancel", body);
+}

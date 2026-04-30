@@ -5,6 +5,7 @@ import type { Tier } from "@/lib/types";
 interface TierContent {
   name: Tier;
   descriptor: string;
+  price: string;
   benefits: [string, string, string];
   proof: { title: string; detail: string };
   timing: { title: string; detail: string };
@@ -34,6 +35,7 @@ const TIER_CONTENT: Record<Tier, TierContent> = {
   Basic: {
     name: "Basic",
     descriptor: "Verified help when timing is flexible.",
+    price: "$65.00",
     benefits: [
       "Verified contractor",
       "Standard dispatch",
@@ -61,6 +63,7 @@ const TIER_CONTENT: Record<Tier, TierContent> = {
   Plus: {
     name: "Plus",
     descriptor: "Best balance of speed and contractor proof.",
+    price: "$95.00",
     benefits: [
       "Faster dispatch priority",
       "Higher recent acceptance rate",
@@ -88,6 +91,7 @@ const TIER_CONTENT: Record<Tier, TierContent> = {
   Premium: {
     name: "Premium",
     descriptor: "Priority dispatch with strongest accountability.",
+    price: "$145.00",
     benefits: [
       "Priority dispatch queue",
       "Strongest contractor proof",
@@ -137,7 +141,7 @@ export function TierCard({
       role="radio"
       aria-checked={isSelected}
       aria-label={`${c.name} tier: ${c.descriptor}${
-        isRecommended ? " — recommended for this issue" : ""
+        isRecommended ? " \u2014 recommended for this issue" : ""
       }`}
       className={[
         "group relative flex w-full flex-col overflow-hidden rounded-lg text-left transition-all duration-200 ease-standard focus:outline-none focus:ring-4 focus:ring-blue-100",
@@ -175,6 +179,7 @@ export function TierCard({
           </div>
 
           <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <span className="text-lg font-bold text-ink">{c.price}</span>
             {isRecommended && (
               <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-primary">
                 Recommended

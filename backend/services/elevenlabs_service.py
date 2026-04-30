@@ -2,6 +2,7 @@
 import os
 import requests
 import base64
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -12,7 +13,7 @@ ELEVENLABS_API_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_V
 
 
 def build_confirmation_text(
-    tier: str,
+    tier: any,
     service_category: str,
     contractor_name: str,
     arrival_window: str,
@@ -20,7 +21,12 @@ def build_confirmation_text(
 ) -> str:
     """Build the voice confirmation text from booking details."""
     
-    if tier == "Premium" and premium_coverage:
+    # Clean up Tier (handle Enum or String)
+    tier_str = str(tier.value) if hasattr(tier, 'value') else str(tier)
+    if "." in tier_str: # Final safety against "Tier.PLUS"
+        tier_str = tier_str.split(".")[-1]
+    
+    if tier_str == "Premium" and premium_coverage:
         return (
             f"Your Premium {service_category} service has been booked with {contractor_name}. "
             f"Premium Coverage is active for this booking. "
@@ -28,7 +34,7 @@ def build_confirmation_text(
         )
     
     return (
-        f"Your {tier} {service_category} service has been booked with {contractor_name}. "
+        f"Your {tier_str} {service_category} service has been booked with {contractor_name}. "
         f"Your contractor is expected to arrive between {arrival_window}."
     )
 
@@ -36,8 +42,8 @@ def build_confirmation_text(
 def generate_voice_confirmation(text: str) -> dict:
     """Send text to ElevenLabs and return audio as base64 string."""
     
-    # Demo mode fallback - return mock if key is missing
     if not ELEVENLABS_API_KEY:
+        print("ElevenLabs Error: API Key missing")
         return {
             "audio_base64": None,
             "voice_status": "unavailable",
@@ -74,23 +80,27 @@ def generate_voice_confirmation(text: str) -> dict:
                 "fallback_text": text
             }
         else:
+            print(f"ElevenLabs Error: {response.status_code} - {response.text}")
             return {
                 "audio_base64": None,
                 "voice_status": "unavailable",
                 "fallback_text": text
             }
     
-    except requests.Timeout:
+    except Exception as e:
+        print(f"ElevenLabs Exception: {str(e)}")
         return {
             "audio_base64": None,
             "voice_status": "unavailable",
             "fallback_text": text
         }
-    except Exception:
-        return {
-            "audio_base64": None,
-            "voice_status": "unavailable",
-            "fallback_text": text
-        }
-    
+def save_audio_base64_to_file(audio_base64: str, output_path: str = "confirmation.mp3") -> str:
+    """Decode base64 audio and persist it as an MP3 file."""
+    if not audio_base64:
+        raise ValueError("audio_base64 is empty")
 
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    audio_bytes = base64.b64decode(audio_base64)
+    path.write_bytes(audio_bytes)
+    return str(path.resolve())

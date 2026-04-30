@@ -23,6 +23,9 @@ class DispatchResponse(BaseModel):
     contractor: Contractor
     estimated_arrival_window: str
     status: str = "Dispatched"
+    audio_base64: Optional[str] = None
+    voice_status: str = "unavailable"
+    fallback_text: Optional[str] = None
 
 class CompleteBookingResponse(BaseModel):
     booking_id: str

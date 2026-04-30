@@ -6,6 +6,7 @@ import {
   selectTier as apiSelectTier,
   dispatch as apiDispatch,
   voiceConfirmation as apiVoiceConfirmation,
+  cancelBooking as apiCancelBooking,
 } from "@/lib/api";
 import type {
   AnalyzeRequestBody,
@@ -16,6 +17,7 @@ import type {
   VoiceConfirmationBody,
   VoiceConfirmationResponse,
 } from "@/lib/types";
+import { useAuth } from "@/context/AuthContext";
 
 const STORAGE_KEY = "instantservice:booking-flow:v1";
 const CLIENT_ID_KEY = "instantservice:client-id";
@@ -52,6 +54,7 @@ type Action =
   | { type: "START_VOICE" }
   | { type: "VOICE_SUCCESS"; voice: VoiceConfirmationResponse }
   | { type: "VOICE_FAIL"; error: string; voice?: VoiceConfirmationResponse }
+  | { type: "CANCEL_BOOKING" }
   | { type: "RESET" };
 
 function getInitialState(clientId: string): FlowState {
@@ -152,6 +155,7 @@ function reducer(state: FlowState, action: Action): FlowState {
         voice: action.voice ?? state.voice,
         error: action.error,
       };
+    case "CANCEL_BOOKING":
     case "RESET":
       return getInitialState(state.clientId);
     default:
@@ -189,6 +193,7 @@ export interface BookingFlowApi {
   selectTier: (tier: Tier) => void;
   dispatchRequest: () => Promise<void>;
   generateVoice: () => Promise<void>;
+  cancel: () => Promise<void>;
   reset: () => void;
 }
 
@@ -204,7 +209,7 @@ export function useBookingFlow(): BookingFlowApi {
     const clientId = readClientId();
     let saved: Partial<FlowState> | null = null;
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const raw = window.sessionStorage.getItem(STORAGE_KEY);
       if (raw) saved = JSON.parse(raw) as Partial<FlowState>;
     } catch {
       saved = null;
@@ -221,15 +226,17 @@ export function useBookingFlow(): BookingFlowApi {
     try {
       const { clientId: _clientId, ...persisted } = state;
       void _clientId;
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted));
+      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(persisted));
     } catch {
       // ignore quota / privacy errors
     }
   }, [state]);
 
+  const { user } = useAuth();
+
   const analyze = useCallback(async (input: RequestInput) => {
     dispatch({ type: "START_ANALYSIS", request: input });
-    const clientId = stateRef.current.clientId || readClientId();
+    const clientId = user?.user_id || stateRef.current.clientId || readClientId();
     const body: AnalyzeRequestBody = {
       client_id: clientId,
       message: input.message,
@@ -267,6 +274,21 @@ export function useBookingFlow(): BookingFlowApi {
       });
       const result = await apiDispatch({ request_id: current.requestId });
       dispatch({ type: "DISPATCH_SUCCESS", dispatchResult: result });
+      if (result.voice_status) {
+        const voice: VoiceConfirmationResponse = {
+          booking_id: result.booking_id,
+          audio_base64: result.audio_base64 ?? null,
+          voice_status: result.voice_status,
+          fallback_text:
+            result.fallback_text ??
+            "Your booking is confirmed. A verified contractor will arrive within the estimated window.",
+        };
+        if (result.voice_status === "generated") {
+          dispatch({ type: "VOICE_SUCCESS", voice });
+        } else {
+          dispatch({ type: "VOICE_FAIL", voice, error: "" });
+        }
+      }
     } catch (err) {
       const message =
         err instanceof Error
@@ -290,7 +312,7 @@ export function useBookingFlow(): BookingFlowApi {
     };
     try {
       const voice = await apiVoiceConfirmation(body);
-      if (voice.voice_status === "success") {
+      if (voice.voice_status === "generated") {
         dispatch({ type: "VOICE_SUCCESS", voice });
       } else {
         dispatch({
@@ -310,6 +332,21 @@ export function useBookingFlow(): BookingFlowApi {
     }
   }, []);
 
+  const cancel = useCallback(async () => {
+    const current = stateRef.current;
+    if (!current.bookingId) {
+      dispatch({ type: "CANCEL_BOOKING" });
+      return;
+    }
+    try {
+      await apiCancelBooking({ booking_id: current.bookingId });
+      dispatch({ type: "CANCEL_BOOKING" });
+    } catch (err) {
+      // Even if API fails, we reset locally for UX
+      dispatch({ type: "CANCEL_BOOKING" });
+    }
+  }, []);
+
   const reset = useCallback(() => dispatch({ type: "RESET" }), []);
 
   return {
@@ -320,6 +357,7 @@ export function useBookingFlow(): BookingFlowApi {
     selectTier,
     dispatchRequest,
     generateVoice,
+    cancel,
     reset,
   };
 }

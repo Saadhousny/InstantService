@@ -7,6 +7,7 @@ from .api.routes.tier import router as tier_router
 from .api.routes.dispatch import router as dispatch_router
 from .api.routes.booking import router as booking_router
 from .api.routes.voice import router as voice_router
+from .api.routes.auth import router as auth_router
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -34,5 +35,6 @@ app.include_router(tier_router, prefix="/api", tags=["Tier Selection"])
 app.include_router(dispatch_router, prefix="/api", tags=["Dispatching"])
 app.include_router(booking_router, prefix="/api", tags=["Booking"])
 app.include_router(voice_router, prefix="/api", tags=["Voice"])
+app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(contractor_router)
 app.include_router(health_router)

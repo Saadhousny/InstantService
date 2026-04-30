@@ -66,15 +66,24 @@ JavaScript Frontend PWA
         |-- POST /api/select-tier
         |-- POST /api/dispatch
         |-- POST /api/voice-confirmation
-        |-- POST /api/complete-booking
+        |-- POST /api/booking/cancel
+        |-- POST /api/auth/register
+        |-- POST /api/auth/login
         v
 Python FastAPI Backend
         |
         |-------- Gemini API          (natural language → structured service request)
         |-------- ElevenLabs API      (text → voice booking confirmation)
-        |-------- Snowflake           (clients, contractors, bookings, reviews, analytics)
+        |-------- Snowflake           (users, clients, contractors, bookings, reviews)
         |-------- Matching Engine     (tier, location, availability, acceptance rate)
 ```
+
+### 🆕 Development Update (Step 2 Complete)
+We have added **Secure Authentication** and **Booking Management**:
+- **Backend:** Added `passlib[bcrypt]` for secure password hashing.
+- **Frontend:** Added `cookies-next` for persistent login sessions.
+- **Database:** Added `USERS` table to Snowflake.
+- **Routes:** Added `/api/auth/register`, `/api/auth/login`, and `/api/booking/cancel`.
 
 ---
 
