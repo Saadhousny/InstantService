@@ -48,6 +48,7 @@ export function HomeScreen({ flow, onTabChange }: HomeScreenProps) {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number>(0);
   const [audioLevel, setAudioLevel] = useState(0);
+  const messageRef = useRef(""); // tracks latest spoken text to avoid stale closures
 
   const [message, setMessage] = useState(state.request?.message ?? "");
   const [location, setLocation] = useState(state.request?.location ?? "");
@@ -138,6 +139,7 @@ export function HomeScreen({ flow, onTabChange }: HomeScreenProps) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const text = Array.from(e.results).map((r: any) => r[0].transcript).join("");
         setMessage(text);
+        messageRef.current = text; // keep ref in sync so onend can read latest
       };
       const safeStart = () => {
         try {
@@ -148,9 +150,14 @@ export function HomeScreen({ flow, onTabChange }: HomeScreenProps) {
       };
 
       recognition.onend = () => {
+        cancelAnimationFrame(animFrameRef.current);
+        audioContextRef.current?.close();
+        audioContextRef.current = null;
         setIsListening(false);
         setMicExpanded(false);
-        if (message.trim().length >= 5) setSheetOpen(true);
+        setAudioLevel(0);
+        // use ref — not stale closure state
+        if (messageRef.current.trim().length >= 5) setSheetOpen(true);
       };
 
       recognition.onerror = () => {
