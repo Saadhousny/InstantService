@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
 
 ALLOWED_CATEGORIES = [
     "Plumbing", "Electrical", "HVAC", "Lawn Maintenance",
@@ -76,8 +76,8 @@ def analyze_service_request(message, location="Unknown", property_type="Unknown"
         raw = response.json()
         raw_text = raw["candidates"][0]["content"]["parts"][0]["text"].strip()
         print("RAW GEMINI:", raw_text)
-        raw_text = re.sub(r"^{3}json\s*", "", raw_text)
-        raw_text = re.sub(r"{3}$", "", raw_text).strip()
+        raw_text = re.sub(r"^```json\s*", "", raw_text)
+        raw_text = re.sub(r"```$", "", raw_text).strip()
         parsed = json.loads(raw_text)
         return _validate(parsed)
     except json.JSONDecodeError:
