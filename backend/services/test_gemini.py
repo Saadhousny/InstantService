@@ -1,5 +1,5 @@
 # backend/test_gemini.py
-from services.gemini_service import analyze_service_request
+from backend.services.gemini_service import analyze_service_request
 
 # Primary demo scenario
 result = analyze_service_request(

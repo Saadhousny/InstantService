@@ -1,5 +1,5 @@
 # backend/test_elevenlabs.py
-from services.elevenlabs_service import build_confirmation_text, generate_voice_confirmation
+from backend.services.elevenlabs_service import build_confirmation_text, generate_voice_confirmation
 
 text = build_confirmation_text(
     tier="Plus",
