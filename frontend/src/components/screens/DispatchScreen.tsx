@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CircleAlert, Clock, MapPin, ShieldCheck, Star } from "lucide-react";
+import {
+  CircleAlert,
+  CircleCheck,
+  Clock,
+  MapPin,
+  ShieldCheck,
+  Star,
+  TrendingUp,
+} from "lucide-react";
 import {
   DispatchProgress,
   type DispatchStep,
@@ -107,15 +115,25 @@ export function DispatchScreen({ flow }: DispatchScreenProps) {
     <main className="min-h-dvh bg-bg text-ink">
       <section className="mx-auto flex max-w-md flex-col gap-6 px-4 pb-32 pt-6">
         <header className="flex flex-col gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Step 3 of 3
-          </span>
+          {isAccepted ? (
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-success">
+                <CircleCheck aria-hidden className="size-3.5" strokeWidth={2} />
+                Accepted
+              </span>
+              <span className="text-xs font-medium text-muted">Step 3 of 3</span>
+            </div>
+          ) : (
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+              Step 3 of 3
+            </span>
+          )}
           <h1 className="text-2xl font-bold text-ink text-balance">
-            {isAccepted ? "Contractor accepted" : "Dispatch in progress"}
+            {isAccepted ? "Contractor confirmed" : "Dispatch in progress"}
           </h1>
           <p className="text-base leading-6 text-subtext">
             {isAccepted
-              ? "Review the contractor below, then confirm to lock the booking."
+              ? "Review the details below, then confirm to lock the booking."
               : "Sit tight — we're matching this with a verified pro."}
           </p>
         </header>
@@ -173,7 +191,7 @@ export function DispatchScreen({ flow }: DispatchScreenProps) {
               onClick={() => void generateVoice()}
               disabled={isVoiceGenerating}
               aria-busy={isVoiceGenerating}
-              className="h-12 w-full rounded-md bg-primary px-4 text-sm font-semibold text-white shadow-sm transition-opacity duration-120 ease-standard hover:opacity-95 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-12 w-full rounded-md border-0 bg-gradient-to-br from-blue-400 to-blue-800 px-4 text-sm font-semibold text-white shadow-sm transition-colors duration-150 ease-standard hover:from-blue-300 hover:to-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isVoiceGenerating ? "Confirming…" : "Confirm booking"}
             </button>
@@ -207,84 +225,86 @@ function ContractorCard({
     <FadeInCard>
       <article
         aria-label={`Assigned contractor ${name}`}
-        className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-5 shadow-sm"
+        className="flex flex-col gap-0 rounded-lg border border-border bg-surface shadow-sm overflow-hidden"
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-col gap-1">
-            <p className="text-lg font-semibold leading-6 text-ink">{name}</p>
+        {/* Identity row */}
+        <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4">
+          <div className="flex flex-col gap-0.5">
+            <p className="text-base font-semibold leading-6 text-ink">{name}</p>
             <p className="text-sm text-muted">{serviceCategory}</p>
           </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-success">
-            <ShieldCheck aria-hidden className="size-3.5" strokeWidth={1.75} />
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-success">
+            <ShieldCheck aria-hidden className="size-3.5" strokeWidth={2} />
             Verified
           </span>
         </div>
 
-        <div className="flex items-start gap-3 rounded-md bg-slate-50 p-3">
+        {/* Arrival highlight */}
+        <div className="mx-5 mb-4 flex items-center gap-3 rounded-md border border-border bg-slate-50 px-4 py-3">
+          <Clock aria-hidden className="size-5 shrink-0 text-primary" strokeWidth={1.75} />
+          <div className="flex flex-col gap-0">
+            <p className="text-xs font-medium text-muted">Estimated arrival</p>
+            <p className="text-sm font-semibold text-ink">{arrivalWindow}</p>
+          </div>
+          {distanceKm != null && (
+            <div className="ml-auto flex items-center gap-1.5 text-xs text-muted">
+              <MapPin aria-hidden className="size-3.5 shrink-0" strokeWidth={1.75} />
+              <span>{distanceKm.toFixed(1)} km away</span>
+            </div>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="mx-5 border-t border-border" />
+
+        {/* Verification proof row */}
+        <div className="flex items-start gap-3 px-5 py-4">
           <ShieldCheck
             aria-hidden
             className="mt-0.5 size-5 shrink-0 text-success"
             strokeWidth={1.75}
           />
           <div className="flex flex-col gap-0.5">
-            <p className="text-sm font-semibold text-ink">Verified contractor</p>
+            <p className="text-sm font-semibold text-ink">License/business identity on file</p>
             <p className="text-xs leading-4 text-muted">
-              License/business identity on file. Reviewed before dispatch.
+              Reviewed before dispatch
             </p>
           </div>
         </div>
 
-        <dl className="flex flex-col gap-2 text-sm">
-          {ratingDisplay && (
-            <div className="flex items-center gap-2 text-subtext">
-              <Star
-                aria-hidden
-                className="size-4 text-amber-500"
-                strokeWidth={1.75}
-                fill="currentColor"
-              />
-              <dt className="sr-only">Reviews</dt>
-              <dd>{ratingDisplay}</dd>
-            </div>
-          )}
-          {acceptanceRatePct != null && (
-            <div className="flex items-center gap-2 text-subtext">
-              <span
-                aria-hidden
-                className="flex size-4 items-center justify-center text-xs font-semibold text-secondary"
-              >
-                %
-              </span>
-              <dt className="sr-only">Acceptance rate</dt>
-              <dd>
-                Accepted {acceptanceRatePct}% of recent requests
-              </dd>
-            </div>
-          )}
-          <div className="flex items-center gap-2 text-subtext">
-            <Clock
-              aria-hidden
-              className="size-4 text-muted"
-              strokeWidth={1.75}
-            />
-            <dt className="sr-only">Arrival window</dt>
-            <dd>
-              <span className="font-semibold text-ink">Arrives</span>{" "}
-              {arrivalWindow}
-            </dd>
-          </div>
-          {distanceKm != null && (
-            <div className="flex items-center gap-2 text-subtext">
-              <MapPin
-                aria-hidden
-                className="size-4 text-muted"
-                strokeWidth={1.75}
-              />
-              <dt className="sr-only">Distance</dt>
-              <dd>{distanceKm.toFixed(1)} km away</dd>
-            </div>
-          )}
-        </dl>
+        {/* Stats row */}
+        {(ratingDisplay || acceptanceRatePct != null) && (
+          <>
+            <div className="mx-5 border-t border-border" />
+            <dl className="flex flex-wrap gap-x-5 gap-y-2 px-5 py-4">
+              {ratingDisplay && (
+                <div className="flex items-center gap-1.5">
+                  <Star
+                    aria-hidden
+                    className="size-4 shrink-0 text-amber-500"
+                    strokeWidth={1.75}
+                    fill="currentColor"
+                  />
+                  <dt className="sr-only">Reviews</dt>
+                  <dd className="text-sm text-subtext">{ratingDisplay}</dd>
+                </div>
+              )}
+              {acceptanceRatePct != null && (
+                <div className="flex items-center gap-1.5">
+                  <TrendingUp
+                    aria-hidden
+                    className="size-4 shrink-0 text-secondary"
+                    strokeWidth={1.75}
+                  />
+                  <dt className="sr-only">Acceptance rate</dt>
+                  <dd className="text-sm text-subtext">
+                    Accepted {acceptanceRatePct}% of recent requests
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </>
+        )}
       </article>
     </FadeInCard>
   );
