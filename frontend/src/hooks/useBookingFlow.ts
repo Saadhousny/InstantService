@@ -326,7 +326,7 @@ export function useBookingFlow(): BookingFlowApi {
     try {
       await apiCancelBooking({ booking_id: current.bookingId });
       dispatch({ type: "CANCEL_BOOKING" });
-    } catch (_err) {
+    } catch {
       // Even if API fails, we reset locally for UX
       dispatch({ type: "CANCEL_BOOKING" });
     }
