@@ -7,7 +7,7 @@ load_dotenv('backend/.env')
 key = os.getenv('GEMINI_API_KEY')
 print("Key length:", len(key) if key else 0)
 
-url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent'
 payload = {'contents': [{'parts': [{'text': 'Test'}]}]}
 response = requests.post(url, params={'key': key}, json=payload)
 
