@@ -1,3 +1,4 @@
+@import 'leaflet/dist/leaflet.css';
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind base;
@@ -31,8 +32,43 @@
   }
 }
 
+/* Tone down map tiles to match the calm slate palette without affecting markers */
+.leaflet-tile-pane {
+  filter: saturate(0.75) brightness(1.03);
+}
+
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  @keyframes mic-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(29, 78, 216, 0.4); }
+    50%       { box-shadow: 0 0 0 8px rgba(29, 78, 216, 0); }
+  }
+  .mic-listening {
+    animation: mic-pulse 1.2s ease-in-out infinite;
+  }
+
+  @keyframes logo-breathe {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.92;
+      filter:
+        drop-shadow(0 0 8px rgba(37, 99, 235, 0.55))
+        drop-shadow(0 0 20px rgba(37, 99, 235, 0.3));
+    }
+    50% {
+      transform: scale(1.06);
+      opacity: 1;
+      filter:
+        drop-shadow(0 0 10px rgba(37, 99, 235, 0.55))
+        drop-shadow(0 0 24px rgba(37, 99, 235, 0.28))
+        drop-shadow(0 0 44px rgba(30, 58, 138, 0.15));
+    }
+  }
+  .logo-breathing {
+    animation: logo-breathe 3s cubic-bezier(0.45, 0, 0.55, 1) infinite;
   }
 }
