@@ -5,6 +5,10 @@ from ...models.response_models import DispatchResponse
 from ...models.domain_models import Contractor, Tier, Booking, BookingStatus, Urgency
 from ...services.database import DatabaseService
 from ...services.matching_service import MatchingService
+from ...services.elevenlabs_service import (
+    build_confirmation_text,
+    generate_voice_confirmation,
+)
 
 router = APIRouter()
 
@@ -65,6 +69,16 @@ async def dispatch_request(payload: DispatchPayload):
             estimated_arrival_window="30-45 minutes",
             premium_coverage=(selected_tier == Tier.PREMIUM)
         )
+
+        arrival_window = "30-45 minutes"
+        confirmation_text = build_confirmation_text(
+            tier=best_contractor.tier.value,
+            service_category=best_contractor.service_category,
+            contractor_name=best_contractor.name,
+            arrival_window=arrival_window,
+            premium_coverage=best_contractor.tier == Tier.PREMIUM,
+        )
+        voice_result = generate_voice_confirmation(confirmation_text)
         
         DatabaseService.save_booking(booking)
         
@@ -75,8 +89,11 @@ async def dispatch_request(payload: DispatchPayload):
         return DispatchResponse(
             booking_id=booking_id,
             contractor=best_contractor,
-            estimated_arrival_window="30-45 minutes",
-            status=status_msg
+            estimated_arrival_window=arrival_window,
+            status=status_msg,
+            audio_base64=voice_result.get("audio_base64"),
+            voice_status=voice_result.get("voice_status", "unavailable"),
+            fallback_text=voice_result.get("fallback_text"),
         )
         
     except Exception as e:

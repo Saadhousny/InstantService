@@ -2,7 +2,7 @@
 import os
 import requests
 import base64
-from enum import Enum
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -94,3 +94,13 @@ def generate_voice_confirmation(text: str) -> dict:
             "voice_status": "unavailable",
             "fallback_text": text
         }
+def save_audio_base64_to_file(audio_base64: str, output_path: str = "confirmation.mp3") -> str:
+    """Decode base64 audio and persist it as an MP3 file."""
+    if not audio_base64:
+        raise ValueError("audio_base64 is empty")
+
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    audio_bytes = base64.b64decode(audio_base64)
+    path.write_bytes(audio_bytes)
+    return str(path.resolve())

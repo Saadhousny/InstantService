@@ -53,6 +53,9 @@ export interface DispatchResponse {
   contractor: Contractor;
   estimated_arrival_window: string;
   status: string;
+  audio_base64?: string | null;
+  voice_status?: string;
+  fallback_text?: string | null;
 }
 
 // POST /api/voice-confirmation

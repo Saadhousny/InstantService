@@ -274,6 +274,21 @@ export function useBookingFlow(): BookingFlowApi {
       });
       const result = await apiDispatch({ request_id: current.requestId });
       dispatch({ type: "DISPATCH_SUCCESS", dispatchResult: result });
+      if (result.voice_status) {
+        const voice: VoiceConfirmationResponse = {
+          booking_id: result.booking_id,
+          audio_base64: result.audio_base64 ?? null,
+          voice_status: result.voice_status,
+          fallback_text:
+            result.fallback_text ??
+            "Your booking is confirmed. A verified contractor will arrive within the estimated window.",
+        };
+        if (result.voice_status === "generated") {
+          dispatch({ type: "VOICE_SUCCESS", voice });
+        } else {
+          dispatch({ type: "VOICE_FAIL", voice, error: "" });
+        }
+      }
     } catch (err) {
       const message =
         err instanceof Error
@@ -297,7 +312,7 @@ export function useBookingFlow(): BookingFlowApi {
     };
     try {
       const voice = await apiVoiceConfirmation(body);
-      if (voice.voice_status === "success") {
+      if (voice.voice_status === "generated") {
         dispatch({ type: "VOICE_SUCCESS", voice });
       } else {
         dispatch({
