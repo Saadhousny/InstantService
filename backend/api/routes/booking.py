@@ -10,6 +10,18 @@ class CancelBookingPayload(BaseModel):
     booking_id: str
     reason: Optional[str] = "User requested cancellation"
 
+@router.get("/{client_id}")
+async def get_bookings(client_id: str):
+    """
+    Returns all bookings for a given client from Snowflake.
+    """
+    try:
+        bookings = DatabaseService.get_user_bookings(client_id)
+        return {"bookings": bookings}
+    except Exception as e:
+        print(f"GET BOOKINGS ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch bookings: {str(e)}")
+
 @router.post("/cancel")
 async def cancel_booking(payload: CancelBookingPayload):
     """

@@ -113,6 +113,29 @@ class DatabaseService:
         }
 
     @staticmethod
+    def get_user_bookings(client_id: str) -> List[dict]:
+        if settings.mock_mode:
+            return []
+
+        query = "SELECT * FROM BOOKINGS WHERE CLIENT_ID = %s ORDER BY CREATED_AT DESC"
+        rows = run_query(query, [client_id])
+
+        return [
+            {
+                "booking_id": row["BOOKING_ID"],
+                "request_id": row["REQUEST_ID"],
+                "client_id": row["CLIENT_ID"],
+                "contractor_id": row["CONTRACTOR_ID"],
+                "status": row["STATUS"],
+                "tier_selected": row["TIER_SELECTED"],
+                "scheduled_window": row["SCHEDULED_WINDOW"],
+                "premium_coverage": row["PREMIUM_COVERAGE"],
+                "created_at": str(row["CREATED_AT"]),
+            }
+            for row in rows
+        ]
+
+    @staticmethod
     def update_booking_status(booking_id: str, new_status: BookingStatus) -> bool:
         if settings.mock_mode:
             return True
